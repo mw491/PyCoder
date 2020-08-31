@@ -11,8 +11,11 @@ from textarea import MyText
 from findwindow import FindWindow
 from changefont import bold_it, italics_it, bg_color, all_text_color, text_color
 
-window = Tk()
+window = Tk(className='PyCoder')
 window.title("Untitled - Python PyCode Tkeditor")
+window.attributes('-zoomed', True)
+window.style = ttk.Style()
+window.style.theme_use('clam')
 window.attributes('-zoomed', True)
 window.minsize(670, 450)
 window.iconphoto(False, PhotoImage(file="/home/mw/Desktop/progamming/my python editor/icon.png"))
@@ -161,15 +164,9 @@ def runfile(event=None):
                 savedasfile.close()
 
                 if keepconsole.get() == "yes":
-                    try:
-                        os.system(f'gnome-terminal -- sh -c "python3 {file}; bash"')
-                    except:
-                        showerror("Error", "this only works if you have gnome-terminal on ubuntu or some other operating systems")
+                    os.system(f'gnome-terminal -- sh -c "python3 {file}; bash"')
                 elif keepconsole.get() == "no":
-                    try:
-                        os.system(f'gnome-terminal -- sh -c "python3 {file};"')
-                    except:
-                        showerror("Error", "this only works if you have gnome-terminal on ubuntu or some other operating systems")
+                    os.system(f'gnome-terminal -- sh -c "python3 {file};"')
 
     else:
         savedfile = open(file, "w")
@@ -179,16 +176,9 @@ def runfile(event=None):
         file_label["text"] = os.path.basename(file)
 
         if keepconsole.get() == "yes":
-            try:
-                os.system(f'gnome-terminal -- sh -c "python3 {file}; bash"')
-            except:
-                showerror("Error", "this only works if you have gnome-terminal on ubuntu or some other operating systems")
-
+            os.system(f'gnome-terminal -- sh -c "python3 {file}; bash"')
         elif keepconsole.get() == "no":
-            try:
-                os.system(f'gnome-terminal -- sh -c "python3 {file};"')
-            except:
-                showerror("Error", "this only works if you have gnome-terminal on ubuntu or some other operating systems")
+            os.system(f'gnome-terminal -- sh -c "python3 {file};"')
 
 
 def light_theme(event=None):
@@ -239,6 +229,10 @@ def autoindent(event=None):
 
     # return 'break' to prevent the default behavior
     return "break"
+
+def tab(event=None):
+    textarea.insert(INSERT, "    ")
+    return 'break'
 
 
 def on_closing(event=None):
@@ -392,6 +386,7 @@ textarea.bind("<Button-3>", show_right_click_menu)
 textarea.bind('<KeyRelease>', update_index)
 textarea.bind("<Control-b>", lambda event=None: bold_it(textarea))
 textarea.bind("<Control-I>", lambda event=None: italics_it(textarea))
+textarea.bind("<Tab>", tab)
 
 # textarea.bind(":", autoindent)
 
