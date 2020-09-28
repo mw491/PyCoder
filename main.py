@@ -1,21 +1,24 @@
+import pathlib
 import tkinter as tk
-from tkinter import *
 from tkinter.filedialog import *
 from tkinter.messagebox import *
 from tkinter import ttk
 
 from speak import SpeakMain
+from comment import comment_or_uncomment
+from show_help import HelpWindow
 from LineNumber import LineMain
 from syntax_highlight import SyntaxHighlight
 from textarea import MyText
-from findwindow import FindWindow
+from findwindow import Finder
+from run_file import run_command
 from changefont import bold_it, italics_it, bg_color, all_text_color, text_color
 
 window = Tk(className='PyCoder')
 window.title("Untitled - Python PyCode Tkeditor")
 window.attributes('-zoomed', True)
 window.style = ttk.Style()
-window.style.theme_use('clam')
+window.style.theme_use('default')
 window.attributes('-zoomed', True)
 window.minsize(670, 450)
 window.iconphoto(False, PhotoImage(file="/home/mw/Desktop/progamming/my python editor/icon.png"))
@@ -38,11 +41,15 @@ def newfile(event=None):
     textarea.delete(1.0, END)
 
     file_label["text"] = "Untitled.py"
+    update_index()
+    # reset undo and redo
+    textarea.edit_reset()
 
 
 def openfile(event=None):
     global file
-    file = askopenfilename(filetypes=[("Python Files", "*.py"),
+    file = askopenfilename(initialdir="/home/mw",
+                           filetypes=[("Python Files", "*.py"),
                                       ("All Files", "*.*"),
                                       ("Html Files", "*.html"),
                                       ("CSS Files", "*.css"),
@@ -55,10 +62,17 @@ def openfile(event=None):
         window.title(os.path.basename(file) + " - Python PyCode TkEditor")
         textarea.delete(1.0, END)
         openedfile = open(file, "r")
-        textarea.insert(END, openedfile.read())
+        try:
+            textarea.insert(END, openedfile.read())
+        except UnicodeDecodeError as error:
+            showerror("Unicode Error!", error)
         openedfile.close()
 
     file_label["text"] = file
+
+    # reset undo and redo
+    textarea.edit_reset()
+    update_index()
 
 
 def savefile(event=None):
@@ -85,6 +99,7 @@ def savefile(event=None):
         savedfile.close()
 
         file_label["text"] = os.path.basename(file)
+        update_index()
 
 
 def savefileas(event=None):
@@ -104,6 +119,7 @@ def savefileas(event=None):
         savedasfile.close()
 
         file_label["text"] = file
+        update_index()
 
 
 def copy():
@@ -112,10 +128,12 @@ def copy():
 
 def cut():
     textarea.event_generate("<<Cut>>")
+    update_index()
 
 
 def paste():
     textarea.event_generate("<<Paste>>")
+    update_index()
 
 
 def undo():
@@ -127,7 +145,8 @@ def redo():
 
 
 def select_all(event=None):
-    textarea.tag_add("sel", '1.0', 'end')
+    # textarea.tag_add("sel", '1.0', 'end')
+    textarea.event_generate("<<SelectAll>>")
 
 
 def deselect_all(event=None):
@@ -135,50 +154,19 @@ def deselect_all(event=None):
 
 
 def speak(event=None):
-    SpeakMain(window)
+    SpeakMain()
 
 
 def showfindwindow(event=None):
-    FindWindow(textarea)
+    Finder(window, textarea).pack(fill=X)
 
 
 def runfile(event=None):
-    global file
-    if file is None:
-        save = showinfo("Save?", "You have to save your file before running,"
-                                 " Are you sure you want to save now?",
-                        type="okcancel")
-        if save == "ok":
-            file = asksaveasfilename(initialfile='Untitled',
-                                     filetypes=[("Python Files", "*.py"),
-                                                ("All Files", "*.*"),
-                                                ("Html Files", "*.html"),
-                                                ("CSS Files", "*.css"),
-                                                ("JavaScript Files", "*.js")])
-            if file == "":
-                file = None
-            else:
-                window.title(os.path.basename(file) + " - Python PyCode TkEditor")
-                savedasfile = open(file, "w")
-                savedasfile.write(textarea.get(1.0, END))
-                savedasfile.close()
+    run_command("running" + file + "...", pathlib.Path, ["python3", file])
 
-                if keepconsole.get() == "yes":
-                    os.system(f'gnome-terminal -- sh -c "python3 {file}; bash"')
-                elif keepconsole.get() == "no":
-                    os.system(f'gnome-terminal -- sh -c "python3 {file};"')
 
-    else:
-        savedfile = open(file, "w")
-        savedfile.write(textarea.get(1.0, END))
-        savedfile.close()
-
-        file_label["text"] = os.path.basename(file)
-
-        if keepconsole.get() == "yes":
-            os.system(f'gnome-terminal -- sh -c "python3 {file}; bash"')
-        elif keepconsole.get() == "no":
-            os.system(f'gnome-terminal -- sh -c "python3 {file};"')
+def comment_uncomment():
+    comment_or_uncomment(textarea)
 
 
 def light_theme(event=None):
@@ -200,7 +188,8 @@ def classic_theme(event=None):
 
 
 def showhelp(event=None):
-    showinfo("Help", "my python editor made using python's tkinter module!")
+    # showinfo("Help", "my python editor made using python's tkinter module!")
+    HelpWindow()
 
 
 def show_right_click_menu(event):
@@ -230,8 +219,9 @@ def autoindent(event=None):
     # return 'break' to prevent the default behavior
     return "break"
 
+
 def tab(event=None):
-    textarea.insert(INSERT, "    ")
+    textarea.insert(INSERT, "   ")
     return 'break'
 
 
@@ -285,6 +275,7 @@ textarea.configure(wrap=NONE, insertbackground="white", selectforeground="white"
 linenumbers = LineMain(textarea)
 
 textarea.pack(fill=BOTH, expand=True)
+textarea.focus_set()
 
 topscrollbar.config(command=textarea.yview)
 bottomscrollbar.config(command=textarea.xview)
@@ -322,13 +313,8 @@ editmenu.add_command(label="Bold Selected Text", command=lambda: bold_it(textare
 editmenu.add_command(label="Italics Selected Text", command=lambda: italics_it(textarea),
                      accelerator="Ctrl+Shift+I")
 
-
 runmenu = Menu(menubar, tearoff=0)
-keepconsole = StringVar()
-keepconsole.set("yes")
-runmenu.add_command(label="Run File", command=runfile, accelerator="F5")
-runmenu.add_checkbutton(label="Keep Console At Finnish", variable=keepconsole, onvalue="yes",
-                        offvalue="no")
+runmenu.add_command(label="Run File in Terminal", command=runfile, accelerator="F5")
 
 toolsmenu = Menu(menubar, tearoff=0)
 themevar = StringVar()
@@ -369,6 +355,7 @@ right_click_menu.add_separator()
 right_click_menu.add_command(label="Select All", command=select_all)
 right_click_menu.add_command(label="Deselect All", command=deselect_all)
 
+
 window.bind("<Control-n>", newfile)
 window.bind("<Control-o>", openfile)
 window.bind("<Control-s>", savefile)
@@ -382,11 +369,13 @@ window.bind("<Alt-s>", speak)
 window.bind("<F1>", showhelp)
 window.bind('<Control-a>', select_all)
 window.bind("<Control-q>", on_closing)
+textarea.bind("<Button-2>", paste)
 textarea.bind("<Button-3>", show_right_click_menu)
 textarea.bind('<KeyRelease>', update_index)
 textarea.bind("<Control-b>", lambda event=None: bold_it(textarea))
 textarea.bind("<Control-I>", lambda event=None: italics_it(textarea))
 textarea.bind("<Tab>", tab)
+textarea.bind("<Control-slash>", lambda e: comment_or_uncomment(textarea))
 
 # textarea.bind(":", autoindent)
 

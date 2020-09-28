@@ -1,18 +1,3 @@
-#!/usr/bin/python
-
-#
-#
-##################################################
-######## Please Don't Remove Author Name #########
-############### Thanks ###########################
-##################################################
-#
-#
-__author__='''
-    Suraj Singh
-    surajsinghbisht054@gmail.com
-    http://bitforestinfo.blogspot.com/
-'''
 import tkinter as tk
 
 
@@ -60,7 +45,7 @@ class LineNumberCanvas(tk.Canvas):
             
             
 
-class LineMain:
+class LineMain():
     def __init__(self, text):
         self.text = text
         self.master = text.master

@@ -3,7 +3,7 @@ from tkinter import *
 
 
 class SpeakMain(Toplevel):
-    def __init__(self, master, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
         self.transient(self.master)
@@ -24,6 +24,6 @@ class SpeakMain(Toplevel):
 
 if __name__ == '__main__':
     w=Tk()
-    SpeakMain(w)
+    SpeakMain()
 
     w.mainloop()
